@@ -335,6 +335,55 @@ leaves vertical margin).
 Not yet tested: real touch devices (only simulated pinch/pan), very old
 browsers, screen readers/accessibility pass.
 
+## 10a. Cluster-specific rebuild (in progress, started 2026-09-07)
+
+The master-plan-derived positions in §5 turned out to be **heavily
+mismapped** for a large fraction of units — not just the known Nice
+`M`-zone gap, but widespread wrong-anchor interpolation across most
+clusters (confirmed by direct visual comparison against the source PDF).
+Root cause: unit numbers do not follow simple physical adjacency across
+the whole property (e.g. `B122-138` is nowhere near `B101-121` on the
+map), so tiling+interpolating the single master PDF produced smooth but
+wrong runs. Attempting to fix this from the master PDF alone proved
+unreliable even with careful re-reading.
+
+**New approach:** the user is providing separate, dedicated per-cluster
+site-plan PDFs (much higher effective resolution and far less cluttered
+than the master plan — e.g. `Santorini cluster plan copy.pdf`, single
+page, all 8 Santorini prefixes A–H clearly labeled). The site is being
+converted to a **cluster-switcher architecture**:
+
+- `#clusterTabs` — a pill/tab bar (in `index.html`, below `#topbar`)
+  listing all 11 clusters. Clicking an available one swaps in that
+  cluster's own map image + unit data; clicking one not yet built shows
+  a "coming soon" toast (`#toast`).
+- `CLUSTERS` (JS object in `index.html`) maps cluster name → `{img, data,
+  w, h}`. A cluster with value `null` is not yet available. Currently
+  only `SANTORINI` is populated.
+- `clusters/<name>.jpg` — a clean (no grid/no markers) render of that
+  cluster's dedicated PDF, `fitz.Matrix(3,3)` off the page.
+- `clusters/<name>_units.json` — same per-unit schema as the root
+  `units.json` (`v,c,x,y,o`), but `x`/`y` are percentages of *that
+  cluster's own image*, not the master map. Positions are derived by
+  reading real block boundaries off the dedicated PDF (same tile-and-
+  interpolate method as §5, but far more reliable given the clearer
+  source) — see the Santorini pass: 929/930 units placed from direct
+  reads, 1 unit (`E143`) via same-prefix nearest-neighbor fallback.
+- `applyViewData()` in `index.html` swaps `state.units`/`state.list`,
+  `IMG_W`/`IMG_H`, `img.src`, re-renders markers, and hides the
+  cluster-filter dropdown + master legend (redundant inside a
+  single-cluster view). Root `units.json`/`map.jpg` are untouched and
+  still power the "All Clusters" tab (still using the old, less
+  accurate master-plan positions for clusters not yet rebuilt).
+
+**To add another cluster once its PDF arrives:** render it the same way
+(see `Skill`-free ad-hoc script pattern: `fitz.open(pdf)[0].get_pixmap
+(matrix=fitz.Matrix(3,3))` → save as `clusters/<name>.jpg`), derive
+positions by reading block start/end labels + interpolating (do NOT
+assume physical adjacency between consecutive numbers — verify), build
+`clusters/<name>_units.json`, then add one line to the `CLUSTERS` object
+in `index.html`.
+
 ## 10. Sensible next steps, if asked to improve this
 
 - Tighten up the `M`-prefix (Nice) position confidence gap (§5).

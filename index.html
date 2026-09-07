@@ -72,6 +72,22 @@
 
   #stats{font-size:12px;color:#c8d2de;white-space:nowrap;margin-left:auto;padding-right:4px;}
 
+  /* ---------- Cluster tabs ---------- */
+  #clusterTabs{
+    display:flex;gap:6px;padding:8px 18px;background:var(--sand-2);border-bottom:1px solid var(--line);
+    overflow-x:auto;flex-shrink:0;white-space:nowrap;
+  }
+  #clusterTabs::-webkit-scrollbar{height:5px;}
+  .ctab{
+    border:1px solid var(--line);background:var(--white);color:var(--ink);border-radius:20px;
+    padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0;
+    transition:background .15s,color .15s;
+  }
+  .ctab:hover{background:var(--sand);}
+  .ctab.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
+  .ctab.disabled{color:var(--muted);cursor:not-allowed;opacity:.55;}
+  .ctab.disabled:hover{background:var(--white);}
+
   /* ---------- Main area ---------- */
   #main{flex:1;position:relative;overflow:hidden;background:#dfe6ea;}
 
@@ -112,6 +128,14 @@
     background:rgba(19,42,66,.85);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;
     z-index:20;pointer-events:none;transition:opacity .4s;
   }
+
+  #toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;
+    box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:100;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   /* ---------- Detail panel ---------- */
   #panel{
@@ -194,6 +218,8 @@
       width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.4);
     }
     #legend{display:none;}
+    #clusterTabs{padding:6px 12px;}
+    .ctab{padding:5px 12px;font-size:11.5px;}
   }
 </style>
 </head>
@@ -220,6 +246,8 @@
 
     <div id="stats"></div>
   </div>
+
+  <div id="clusterTabs"></div>
 
   <div id="main">
 
@@ -266,6 +294,8 @@
     </div>
 
   </div>
+
+  <div id="toast"></div>
 </div>
 
 <script>
@@ -282,7 +312,17 @@
   var CLUSTER_ORDER = ["SANTORINI","COSTA BRAVA","PORTOFINO","NICE","VENICE","MALTA",
                        "MARBELLA","MONTECARLO","MYKONOS","IBIZA","MOROCCO"];
 
-  var IMG_W = 4000, IMG_H = 2829; // native pixel size of map.jpg
+  // Per-cluster dedicated map views. `null` = not yet built (tab shown disabled).
+  var CLUSTERS = {
+    "SANTORINI": {img:"clusters/santorini.jpg", data:"clusters/santorini_units.json", w:3572, h:2526},
+    "COSTA BRAVA": null, "PORTOFINO": null, "NICE": null, "VENICE": null,
+    "MALTA": null, "MARBELLA": null, "MONTECARLO": null, "MYKONOS": null,
+    "IBIZA": null, "MOROCCO": null
+  };
+
+  var IMG_W = 4000, IMG_H = 2829; // native pixel size of the active map image
+  var MASTER = {units:null, list:null, imgSrc:'map.jpg', w:4000, h:2829};
+  var clusterDataCache = {}; // cluster name -> units data (fetched once)
 
   var state = {
     units: null,          // id -> unit
@@ -291,7 +331,8 @@
     tx: 0, ty: 0,
     activeCluster: "",
     selectedId: null,
-    view: "map"
+    view: "map",
+    activeView: "ALL"      // "ALL" or a cluster name
   };
 
   var viewport = document.getElementById('mapViewport');
@@ -301,14 +342,17 @@
 
   // ---------------- load data ----------------
   fetch('units.json').then(function(r){return r.json();}).then(function(data){
-    state.units = data;
-    state.list = Object.keys(data).map(function(id){
+    MASTER.units = data;
+    MASTER.list = Object.keys(data).map(function(id){
       var u = data[id]; u.id = id; return u;
     });
+    state.units = MASTER.units;
+    state.list = MASTER.list;
     init();
   });
 
   function init(){
+    buildClusterTabs();
     buildClusterFilter();
     buildLegend();
     renderMarkers();
@@ -565,6 +609,7 @@
   // ---------------- cluster filter & legend ----------------
   function buildClusterFilter(){
     var sel = document.getElementById('clusterFilter');
+    sel.innerHTML = '<option value="">All clusters</option>';
     var counts = {};
     state.list.forEach(function(u){ counts[u.c] = (counts[u.c]||0)+1; });
     CLUSTER_ORDER.forEach(function(c){
@@ -573,12 +618,95 @@
       opt.value = c; opt.textContent = c+' ('+counts[c]+')';
       sel.appendChild(opt);
     });
-    sel.addEventListener('change', function(){
-      state.activeCluster = sel.value;
-      applyClusterFilter();
-      renderListRows();
-      updateStats();
+    sel.value = "";
+    state.activeCluster = "";
+  }
+  document.getElementById('clusterFilter').addEventListener('change', function(){
+    state.activeCluster = this.value;
+    applyClusterFilter();
+    renderListRows();
+    updateStats();
+  });
+
+  // ---------------- cluster tabs (switchable per-cluster views) ----------------
+  function buildClusterTabs(){
+    var el = document.getElementById('clusterTabs');
+    var html = '<button class="ctab active" data-view="ALL">All Clusters</button>';
+    CLUSTER_ORDER.forEach(function(c){
+      var available = !!CLUSTERS[c];
+      html += '<button class="ctab'+(available?'':' disabled')+'" data-view="'+c+'">'+
+              titleCase(c)+'</button>';
     });
+    el.innerHTML = html;
+    el.addEventListener('click', function(e){
+      var btn = e.target.closest('.ctab');
+      if(!btn) return;
+      var view = btn.dataset.view;
+      if(btn.classList.contains('disabled')){
+        showToast(titleCase(view)+' cluster view is coming soon');
+        return;
+      }
+      if(view === state.activeView) return;
+      loadClusterView(view);
+    });
+  }
+
+  function titleCase(s){
+    return s.replace(/\w\S*/g, function(t){ return t.charAt(0).toUpperCase()+t.slice(1).toLowerCase(); });
+  }
+
+  var toastTimer = null;
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+
+  function setActiveTab(view){
+    document.querySelectorAll('#clusterTabs .ctab').forEach(function(b){
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+  }
+
+  function loadClusterView(view){
+    if(view === 'ALL'){
+      applyViewData(MASTER.units, MASTER.list, MASTER.imgSrc, MASTER.w, MASTER.h, 'ALL');
+      return;
+    }
+    var cfg = CLUSTERS[view];
+    if(!cfg) return;
+    if(clusterDataCache[view]){
+      applyViewData(clusterDataCache[view].units, clusterDataCache[view].list, cfg.img, cfg.w, cfg.h, view);
+      return;
+    }
+    showToast('Loading '+titleCase(view)+'…');
+    fetch(cfg.data).then(function(r){return r.json();}).then(function(data){
+      var list = Object.keys(data).map(function(id){ var u=data[id]; u.id=id; return u; });
+      clusterDataCache[view] = {units:data, list:list};
+      applyViewData(data, list, cfg.img, cfg.w, cfg.h, view);
+    });
+  }
+
+  function applyViewData(units, list, imgSrc, w, h, view){
+    state.units = units;
+    state.list = list;
+    state.activeView = view;
+    state.selectedId = null;
+    state.activeCluster = "";
+    IMG_W = w; IMG_H = h;
+    img.src = imgSrc;
+    document.getElementById('panel').classList.remove('open');
+    markerLayer.innerHTML = '';
+    renderMarkers();
+    buildClusterFilter();
+    document.getElementById('clusterFilter').style.display = (view==='ALL') ? '' : 'none';
+    document.getElementById('legend').style.display = (view==='ALL' && state.view==='map') ? 'block' : 'none';
+    renderListRows();
+    updateStats();
+    setActiveTab(view);
+    if(state.view==='map') fitToScreen();
   }
 
   function buildLegend(){
@@ -695,7 +823,7 @@
     document.getElementById('listView').classList.toggle('show', v==='list');
     document.getElementById('main').style.background = v==='map' ? '#dfe6ea' : '#fff';
     document.getElementById('zoomCtl').style.display = v==='map' ? 'flex' : 'none';
-    document.getElementById('legend').style.display = v==='map' ? 'block' : 'none';
+    document.getElementById('legend').style.display = (v==='map' && state.activeView==='ALL') ? 'block' : 'none';
     viewport.style.display = v==='map' ? 'block' : 'none';
     if(v==='map') setTimeout(fitToScreen, 0);
   }
