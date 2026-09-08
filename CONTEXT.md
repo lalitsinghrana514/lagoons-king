@@ -366,20 +366,29 @@ converted to a **cluster-switcher architecture**:
   `units.json` (`v,c,x,y,o`), but `x`/`y` are percentages of *that
   cluster's own image*, not the master map. Positions are derived with
   an **OCR-based pipeline**, not manual crop-reading — see
-  `tools/README.md` for the full method. Manual tile-reading (still
-  useful for spot-checks / resolving ambiguous cases) turned out too
-  slow and too error-prone at this scale to trust as the primary
-  method. Santorini result: 867/930 units (93%) from direct high-
-  confidence OCR reads (RapidOCR, `pip install rapidocr-onnxruntime`,
-  no system tesseract needed — a 7x-zoom render was sharp enough that
-  it read full labels including the prefix letter), the rest via
-  linear interpolation between the nearest *OCR-confirmed* same-prefix
-  neighbors. Verified via neighbor-distance outlier check (0 outliers
-  on the OCR layer) and a building-color proximity check on the final
-  merged set (started at 16 units with no building color nearby, down
-  to 4 after re-anchoring the gap-fill to OCR neighbors — those 4 are
-  likely genuine landscaping gaps between buildings, not errors, but
-  worth a glance if this cluster is revisited).
+  `tools/README.md` for the full method, **especially the gap-fill
+  section** — the first pass of Santorini shipped with real, visible
+  bugs (a 22-unit streak cutting across buildings, several units in
+  the street) because small numeric gaps between two OCR-confirmed
+  points were assumed safe to bridge without checking that both points
+  were actually on the *same physical column* — these site plans are a
+  snake of short straight columns turning ~90° at every boundary, and
+  even a 1-unit gap can straddle that corner. Santorini final result:
+  867/930 units (93%) from direct high-confidence OCR reads (RapidOCR,
+  `pip install rapidocr-onnxruntime`, no system tesseract needed — a
+  7x-zoom render was sharp enough to read full labels including the
+  prefix letter); the rest filled via direction-consistency-checked
+  runs (never a plain nearest-neighbor bracket), with every ambiguous
+  between-column gap individually confirmed by cropping the actual PDF
+  region and reading the labels (~19 units needed this — roughly half
+  turned out to belong to the earlier column, half to the later one,
+  confirming there's no reliable shortcut rule). Verified clean via:
+  neighbor-distance outlier check on the OCR layer (0 outliers),
+  a neighbor-distance *ratio* check on every filled-in unit (catches
+  wrongly-bridged runs that "distance to nearest OCR neighbor" alone
+  misses), and a building-color proximity check (0 flags at a 15-18px
+  radius — see `tools/README.md` for why tighter radii are noise, not
+  signal).
 - `applyViewData()` in `index.html` swaps `state.units`/`state.list`,
   `IMG_W`/`IMG_H`, `img.src`, re-renders markers, and hides the
   cluster-filter dropdown + master legend (redundant inside a
