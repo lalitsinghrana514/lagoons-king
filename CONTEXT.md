@@ -364,11 +364,22 @@ converted to a **cluster-switcher architecture**:
   cluster's dedicated PDF, `fitz.Matrix(3,3)` off the page.
 - `clusters/<name>_units.json` — same per-unit schema as the root
   `units.json` (`v,c,x,y,o`), but `x`/`y` are percentages of *that
-  cluster's own image*, not the master map. Positions are derived by
-  reading real block boundaries off the dedicated PDF (same tile-and-
-  interpolate method as §5, but far more reliable given the clearer
-  source) — see the Santorini pass: 929/930 units placed from direct
-  reads, 1 unit (`E143`) via same-prefix nearest-neighbor fallback.
+  cluster's own image*, not the master map. Positions are derived with
+  an **OCR-based pipeline**, not manual crop-reading — see
+  `tools/README.md` for the full method. Manual tile-reading (still
+  useful for spot-checks / resolving ambiguous cases) turned out too
+  slow and too error-prone at this scale to trust as the primary
+  method. Santorini result: 867/930 units (93%) from direct high-
+  confidence OCR reads (RapidOCR, `pip install rapidocr-onnxruntime`,
+  no system tesseract needed — a 7x-zoom render was sharp enough that
+  it read full labels including the prefix letter), the rest via
+  linear interpolation between the nearest *OCR-confirmed* same-prefix
+  neighbors. Verified via neighbor-distance outlier check (0 outliers
+  on the OCR layer) and a building-color proximity check on the final
+  merged set (started at 16 units with no building color nearby, down
+  to 4 after re-anchoring the gap-fill to OCR neighbors — those 4 are
+  likely genuine landscaping gaps between buildings, not errors, but
+  worth a glance if this cluster is revisited).
 - `applyViewData()` in `index.html` swaps `state.units`/`state.list`,
   `IMG_W`/`IMG_H`, `img.src`, re-renders markers, and hides the
   cluster-filter dropdown + master legend (redundant inside a
@@ -376,13 +387,15 @@ converted to a **cluster-switcher architecture**:
   still power the "All Clusters" tab (still using the old, less
   accurate master-plan positions for clusters not yet rebuilt).
 
-**To add another cluster once its PDF arrives:** render it the same way
-(see `Skill`-free ad-hoc script pattern: `fitz.open(pdf)[0].get_pixmap
-(matrix=fitz.Matrix(3,3))` → save as `clusters/<name>.jpg`), derive
-positions by reading block start/end labels + interpolating (do NOT
-assume physical adjacency between consecutive numbers — verify), build
-`clusters/<name>_units.json`, then add one line to the `CLUSTERS` object
-in `index.html`.
+**To add another cluster once its PDF arrives:** render the clean web
+image (`fitz.Matrix(3,3)` → `clusters/<name>.jpg`), run the OCR
+pipeline in `tools/` (see `tools/README.md`) against a separate
+higher-zoom render (`fitz.Matrix(7,7)` → `ocr_source.png`) to derive
+`clusters/<name>_units.json`, then add one line to the `CLUSTERS`
+object in `index.html`. Do NOT assume physical adjacency between
+consecutive numbers when resolving anything OCR leaves ambiguous —
+verify against the actual PDF (confirmed false on this project: e.g.
+Santorini's `B122-138` is nowhere near `B101-121` on the map).
 
 ## 10. Sensible next steps, if asked to improve this
 
