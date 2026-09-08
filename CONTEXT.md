@@ -406,6 +406,41 @@ consecutive numbers when resolving anything OCR leaves ambiguous —
 verify against the actual PDF (confirmed false on this project: e.g.
 Santorini's `B122-138` is nowhere near `B101-121` on the map).
 
+**VENICE done** (151/151 units — 148 direct OCR reads, 3 read directly
+off their own partially-obscured label via manual crop, zero
+interpolation needed). Two things worth knowing for the next cluster:
+- The source PDF (`05_Venice_ISOLATED_NATIVE_300DPI.pdf`) was a
+  **raster embed**, not vector like Santorini's — `get_text("words")`
+  returned 0 words (confirmed no text-layer shortcut exists) and the
+  embedded image has a real detail ceiling (4702×2682 native @ 300
+  DPI). Rendering beyond that (this pass used 2x = ~9400px for the OCR
+  pass) just upsamples for the OCR model's benefit; it doesn't reveal
+  new detail the way re-rendering a vector PDF at higher zoom does.
+- This map prints roughly 3x more plot numbers than exist in our
+  owner data (274 OCR-read labels like `V163`, `W135` had no matching
+  entry in `units.json` — confirmed genuine via repeat-detection
+  across overlapping OCR tiles and spot-checking on the map, not OCR
+  misreads). That's expected per the playbook's Section 0 (unsold /
+  other-phase plots use the same prefix+number scheme) and not a
+  blocker — just don't be alarmed by a low match-rate-looking number
+  before checking whether the *matched* count covers 100% of what
+  `units.json` actually needs (it did: 151/151).
+- The neighbor-distance outlier check produced false positives here
+  (e.g. V226/V228 flagged as implausibly far apart) because unlike
+  Santorini's dense unbroken columns, Venice's ~150 owned villas are
+  *sparse* across a much larger numbered footprint — consecutive
+  owned numbers are often genuinely on opposite sides of the canal.
+  Direct OCR reads don't need this check to validate them (only
+  interpolated ones do) — don't discard a good direct read because it
+  fails a same-prefix-adjacency heuristic that assumes a density this
+  map doesn't have.
+- The building-color proximity check also produced false positives
+  (16 units) — this map's unit labels are white rounded "pin" icons
+  offset from/overlapping the pale building fill, so a correctly
+  centered dot often lands on the white pin, not the colored roof.
+  Cross-check a sample by eye before trusting that heuristic's flags
+  on a map style like this one.
+
 ## 10. Sensible next steps, if asked to improve this
 
 - Tighten up the `M`-prefix (Nice) position confidence gap (§5).
