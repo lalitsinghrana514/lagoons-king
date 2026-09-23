@@ -546,20 +546,33 @@ got flagged and eyeballed directly against the cluster image.
 - Costa Brava `J334-J477` (28 units) — resolved automatically by the same
   algorithm tightening, no manual reads needed.
 
-**Still open (documented, not fixed this pass)** — small, contained, worth
-a dedicated crop-and-read session rather than another automated attempt:
+**Still open (documented, not fixed this pass)**:
 - Nice `M101-M107` (~7 units): each has a unique position (not a
   duplicate/collision), just compressed tighter than the surrounding
   M-zone's normal spacing. Low visual impact — sits within one already-
-  correct row, doesn't cross into unrelated buildings.
-- Morocco `Y112-Y124` (12 units, `Y124` itself doesn't exist as a real
-  villa): `Y111` and `Y125` are confirmed-real but sit close together
-  across open parkland (`MOROCCO 2` label area) on the map despite the
-  13-number gap, so the algorithm (correctly, per its own safety rule)
-  produced a short chord that visibly crosses empty space rather than
-  buildings. Whatever building(s) `Y112-Y124` actually sit on were not
-  found in this pass — the real position needs a wider visual search of
-  the Morocco 2 sub-area than this review had time for.
+  correct row, doesn't cross into unrelated buildings. Attempted a
+  crop-and-read fix in the 2026-09-23 follow-up pass and abandoned it:
+  the row's tiny rotated labels (M114-M119) were misread against a known-
+  correct anchor (M108-M111, already confirmed) by what looks like a
+  consistent off-by-several digit-confusion at this zoom — rather than
+  risk writing a wrong position with unverified confidence, this was left
+  alone. Needs a materially higher-zoom crop (try `fitz.Matrix(7,7)` off
+  the source PDF rather than reading off the already-rendered
+  `clusters/nice.jpg`) or RapidOCR rather than eyeballing.
+
+## 10d. Morocco Y112-Y124 fixed (2026-09-23, later same day)
+
+Traced by hand against `clusters/morocco.jpg`: the run isn't actually
+ambiguous or hard to find, just spread across two overlapping crops that
+weren't both checked in the prior pass. `Y112` through `Y119` continue the
+same column south of `Y120-Y124`'s cluster of villas around the
+`MOROCCO 2` label; all 12 (`Y112-Y123`; `Y124` itself is a real, visible,
+labelled building on the map but genuinely has no entry in the owner
+spreadsheet — same "unsold/other-phase plot" situation as Venice's ~274
+unmatched labels in §10a, so it's correctly absent from `units.json` and
+was left out) were hand-anchored from crop-read pixel positions and
+verified by overlaying the result back on the source image: every one now
+sits on its own building, not crossing the park.
 
 Re-running `tools/fix_gapfill.py clusters/<name>_units.json` (no
 `--write`) still only reports true *collisions* (5 groups, 18 units total
