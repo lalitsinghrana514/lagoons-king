@@ -122,17 +122,6 @@ def fill_prefix(conf, nmax):
             return (conf[lo][0] + t * (conf[hi][0] - conf[lo][0]),
                     conf[lo][1] + t * (conf[hi][1] - conf[lo][1]))
 
-        if hi - lo > 15:
-            # this sparse a gap (>15 missing numbers between the nearest real
-            # anchors) has too little nearby evidence for a direction fit to
-            # be trustworthy at all -- these are exactly the low-confidence
-            # zones the source docs call out (e.g. Nice's M-prefix). A plain
-            # bounded chord between the two real points is the most
-            # defensible fallback absent better data; flag it as such.
-            for v in missing:
-                out[v] = chord(v)
-            continue
-
         def place(v, candidate):
             nearer = conf[lo] if (v - lo) <= (hi - v) else conf[hi]
             if math.hypot(candidate[0] - nearer[0], candidate[1] - nearer[1]) > chord_cap:
@@ -143,6 +132,28 @@ def fill_prefix(conf, nmax):
         hi_pts = gather_side(conf, ckset, hi, +1)
         lo_line = fit_line(lo_pts) if len(lo_pts) >= 2 else None
         hi_line = fit_line(hi_pts) if len(hi_pts) >= 2 else None
+
+        if hi - lo > 15 and not (lo_line and hi_line):
+            # this sparse a gap (>15 missing numbers between the nearest real
+            # anchors) has too little nearby evidence for a direction fit on
+            # AT LEAST one side -- these are exactly the low-confidence zones
+            # the source docs call out (e.g. Nice's M-prefix). A plain
+            # bounded chord between the two real points is the most
+            # defensible fallback absent better data. But when BOTH sides
+            # have enough nearby confirmed points to fit a real local
+            # direction, don't throw that away just because the gap is wide
+            # -- the split-by-nearer-side logic below (each half hugging its
+            # own side's real heading) is strictly more informed than a
+            # blind chord, and a wide gap is exactly where a blind chord is
+            # most likely to compress dozens of units into a meaningless
+            # sliver (confirmed on Nice's L406-480 and L513-539 runs: the
+            # two bounding anchors were pixel-close by coincidence despite
+            # being on unrelated legs of the serpentine, and a 74- and
+            # 26-unit run collapsed to ~3-5px/step instead of the ~40-80px/
+            # step every neighbouring run on the same prefix actually used).
+            for v in missing:
+                out[v] = chord(v)
+            continue
 
         def unit_dir(line):
             mx, cx, my, cy = line

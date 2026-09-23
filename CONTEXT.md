@@ -510,6 +510,64 @@ does not by itself prevent the stacking failure mode; that needed the
 explicit "no two units may share a coordinate" invariant checked
 separately.
 
+## 10c. Second pass: micro-compressed runs (2026-09-23, same day)
+
+The stacking fix above traded one failure mode for a *quieter* one that a
+full re-review caught: for a gap wider than 15 missing numbers, the script
+always fell back to a plain chord between the two nearest real anchors —
+even when both sides had enough nearby confirmed points to fit a real
+local direction. On most prefixes the two anchors bounding a wide gap are
+genuinely far apart, so a chord is harmless. But on a handful of prefixes
+the two anchors happened to be *pixel-close* purely by coincidence (they
+sit on different, unrelated legs of the serpentine, not adjacent columns)
+— and a chord between two close points, walked in tiny number-of-steps
+increments, compresses dozens of real units into a visually-invisible
+micro-line a few px long, cutting straight through unrelated buildings.
+
+**How this was found**: not by the collision check (each compressed unit
+still has a *unique* coordinate, just absurdly close to its neighbours) —
+by a second audit comparing each gap's actual pixel distance between its
+two bounding anchors against that prefix's own median per-unit step
+elsewhere. Any run where the implied per-step distance was <40% of normal
+got flagged and eyeballed directly against the cluster image.
+
+**Confirmed and fixed**:
+- Nice `L406-L480` (73 units, was 4.9px/step vs this prefix's normal
+  ~43-60px/step) and `L513-L539` (25 units, was 2.9-6.8px/step) — both
+  fixed. Root cause of the >15-gap rule was tightened: it now only forces
+  a plain chord when at least one side genuinely lacks a fittable local
+  direction; when both sides have one, the existing split/same-row logic
+  (which hugs each side's real heading) runs regardless of gap width. That
+  alone re-derived L406-480 correctly with **no manual reads needed**.
+  L513-539 still needed 4 hand-read anchors (`L516-L519`, crop-verified
+  against `clusters/nice.jpg`) because its two bounding anchors are
+  genuinely close in a way the direction fit alone couldn't resolve — the
+  true path loops back on itself between them.
+- Costa Brava `J334-J477` (28 units) — resolved automatically by the same
+  algorithm tightening, no manual reads needed.
+
+**Still open (documented, not fixed this pass)** — small, contained, worth
+a dedicated crop-and-read session rather than another automated attempt:
+- Nice `M101-M107` (~7 units): each has a unique position (not a
+  duplicate/collision), just compressed tighter than the surrounding
+  M-zone's normal spacing. Low visual impact — sits within one already-
+  correct row, doesn't cross into unrelated buildings.
+- Morocco `Y112-Y124` (12 units, `Y124` itself doesn't exist as a real
+  villa): `Y111` and `Y125` are confirmed-real but sit close together
+  across open parkland (`MOROCCO 2` label area) on the map despite the
+  13-number gap, so the algorithm (correctly, per its own safety rule)
+  produced a short chord that visibly crosses empty space rather than
+  buildings. Whatever building(s) `Y112-Y124` actually sit on were not
+  found in this pass — the real position needs a wider visual search of
+  the Morocco 2 sub-area than this review had time for.
+
+Re-running `tools/fix_gapfill.py clusters/<name>_units.json` (no
+`--write`) still only reports true *collisions* (5 groups, 18 units total
+across Malta/Nice/Morocco, unchanged from §10b) — it does not check for
+this compression pattern. If auditing again, compare each gap's implied
+per-step distance against the prefix's own local median, not just check
+for exact duplicate coordinates.
+
 ## 10. Sensible next steps, if asked to improve this
 
 - Tighten up the `M`-prefix (Nice) position confidence gap (§5).
