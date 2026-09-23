@@ -441,6 +441,75 @@ interpolation needed). Two things worth knowing for the next cluster:
   Cross-check a sample by eye before trusting that heuristic's flags
   on a map style like this one.
 
+## 10b. Fixed: duplicate-coordinate pileups (2026-09-23)
+
+Full audit found a systemic bug across every cluster *except* Santorini and
+Venice: their gap-fill's documented "snap to nearer anchor instead of
+drawing a false streak" safety rule (§5, and the equivalent in the newer
+per-cluster pipeline) had an unintended side effect nobody had checked for
+— when **several consecutive missing units all snapped to the same single
+anchor**, they didn't just land near each other, they landed on the
+*identical pixel*, stacked on top of one another. Visually this rendered
+as a "starburst" (the map library's overlapping-marker spread) with 15-20+
+units piled on one spot — worst on Malta and Nice.
+
+Verified by grouping every cluster's units by rounded (x, y) and counting
+collision groups — a real OCR-derived position essentially never coincides
+pixel-for-pixel with another, so any group of 2+ units on the same
+coordinate is definitionally a bug, not a coincidence:
+
+| Cluster | Units | Stacked before fix | Stacked after fix |
+|---|---|---|---|
+| Santorini | 930 | 0 | 0 |
+| Venice | 413 | 0 | 0 |
+| Costa Brava | 895 | 57 | 0 |
+| Portofino | 839 | 63 | 0 |
+| Morocco | 995 | 44 | 2 |
+| Malta | 1052 | 356 | 4 |
+| Nice | 1020 | 606 | 5 |
+
+**The fix** (`tools/fix_gapfill.py`, re-runnable): treat every *uniquely*-
+positioned unit in a prefix as a trustworthy anchor (collisions only ever
+come from the old snap fallback, so a unique position is by construction
+either a direct read or an already-good interpolation), then re-derive
+every collided unit's position with the same direction-consistency-checked
+multi-point fit the newer per-cluster pipeline already uses for OCR gap-
+filling (§ tools/README.md step 7) — fit a line through several confirmed
+points on each side of a gap, detect a row reversal via the two sides'
+direction dot product, and use whichever side's line actually explains the
+gap, instead of a 2-point guess or a blind snap. No re-OCR needed; this
+only re-derives positions that were never trustworthy to begin with.
+
+Two additional safety nets were needed and are now baked into the script
+(both caught by re-auditing after the first pass, not by inspection alone
+— check for these regressions again if this script is modified):
+- **Runaway extrapolation**: a 2-3 point local line fit's slope error
+  compounds fast over a long gap; a first pass sent ~30 Nice units
+  (M156-M179, M522-M528) to negative coordinates, off the image entirely.
+  Fixed by capping any line-derived candidate to a bounded chord between
+  the gap's two real anchors when it strays too far, and by falling back
+  to a plain chord outright for any gap wider than 15 missing numbers
+  (too little nearby evidence for a direction fit to mean anything — this
+  is exactly the low-confidence M-prefix zone §5 already flagged).
+- **Absolute clamp**: every final x/y is clamped to [0, 100] regardless of
+  how it was derived, as a last-resort net.
+
+The **2-5 units still stacked per cluster** after the fix are prefixes
+with *zero* remaining same-prefix confirmed anchors nearby in either
+direction (both neighbours also collided) — there's no direction to fit at
+all, so they hold at the nearest real anchor's exact position rather than
+guess. These are the only units in the previously-broken clusters that
+still need a manual crop-and-read (see §5's "if you need to fix a specific
+unit" note) to actually resolve; running `tools/fix_gapfill.py
+clusters/<name>_units.json` (no `--write`) prints exactly which ones.
+
+**If you touch the gap-fill logic in `ocr_pipeline.py`/`parse_ocr.py`'s
+successor for a future cluster**, port this fix's two safety nets — the
+direction-consistency check alone (already documented in §tools/README.md)
+does not by itself prevent the stacking failure mode; that needed the
+explicit "no two units may share a coordinate" invariant checked
+separately.
+
 ## 10. Sensible next steps, if asked to improve this
 
 - Tighten up the `M`-prefix (Nice) position confidence gap (§5).
