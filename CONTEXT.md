@@ -581,6 +581,34 @@ this compression pattern. If auditing again, compare each gap's implied
 per-step distance against the prefix's own local median, not just check
 for exact duplicate coordinates.
 
+## 10e. Morocco full label audit (2026-09-23, third pass)
+
+"Morocco still has missing stuff" was right, and hand-tracing pockets was the
+wrong tool. Instead OCR'd **every** printed label on `clusters/morocco.jpg`
+(RapidOCR, 900px tiles x2 upscale, plus 90/-90/35/-35 degree rotated passes so
+the steeply-rotated column labels are read too; `tools/morocco_full_ocr.py`
+is the base pass) and diffed against `morocco_units.json`:
+
+- **30 villas printed on the map had no marker at all** (X122, X127, X578,
+  Y101, Y124, Y179, Y183, Y185, Y198, Y224, Y336, Y383, Y426, Y427, Y435,
+  Y438, Y452, Y476, Y479, Y486, Y487, Y520, Y530, Y533, Y537, Y558, Y578,
+  Y639, Y660, Y663). They have no owner in the spreadsheet (unsold / other-
+  phase plots, same situation as Venice SS10a) so they were dropped from
+  `units.json`. They are now added back with `o: []` — the UI already shows
+  "No owner on file". Cluster total is now **1,025**, which exactly matches
+  the "TOTAL 1,025" in the map's own legend table.
+- **69 existing units were re-anchored** to their actually-printed label
+  (they had been interpolated and were up to 2400px off, e.g. X128-X133,
+  Y125-Y130 and Y140-Y145 which sat in open parkland).
+- 9 units the OCR never read (X134, X216, Y135, Y177, Y244, Y277, Y344,
+  Y354, Y371) were re-filled from their now-OCR-anchored neighbours.
+- Re-anchoring uses OCR centre + (0, +16px), the marker offset the original
+  Morocco build used (measured: median 0.0, 15.9 over 919 agreeing units).
+- Result: 0 collisions, 0 out-of-bounds, every label on the map has a marker.
+
+The same "OCR every label, diff against the data" audit is the fastest way
+to find missing/misplaced units on any other cluster.
+
 ## 10. Sensible next steps, if asked to improve this
 
 - Tighten up the `M`-prefix (Nice) position confidence gap (§5).
