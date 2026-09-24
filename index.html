@@ -181,6 +181,36 @@
   .no-owner{color:var(--muted);font-size:13px;font-style:italic;padding:10px 0;}
   #panel .p-foot{padding:12px 20px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);}
 
+
+  /* ---------- Unit details / floor plan ---------- */
+  .unit-facts{border:1px solid var(--line);border-radius:10px;background:var(--white);margin-bottom:14px;overflow:hidden;}
+  .unit-facts .uf-head{padding:10px 14px;background:var(--sand);border-bottom:1px solid var(--line);}
+  .unit-facts .uf-type{font-weight:800;font-size:14px;color:var(--navy);letter-spacing:.2px;}
+  .unit-facts .uf-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+  .uf-grid{display:grid;grid-template-columns:1fr 1fr;}
+  .uf-cell{padding:10px 14px;border-bottom:1px solid var(--sand-2);}
+  .uf-cell:nth-child(odd){border-right:1px solid var(--sand-2);}
+  .uf-cell:nth-last-child(-n+2){border-bottom:none;}
+  .uf-k{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);}
+  .uf-v{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px;}
+  .uf-v small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:1px;}
+  .uf-note{padding:8px 14px;font-size:11px;color:var(--muted);background:var(--sand);border-top:1px solid var(--line);line-height:1.4;}
+  .fp-btn{display:block;width:100%;border:none;border-top:1px solid var(--line);background:var(--white);padding:0;cursor:zoom-in;text-align:left;}
+  .fp-btn img{display:block;width:100%;max-height:190px;object-fit:contain;background:#fff;padding:8px 8px 0;}
+  .fp-btn span{display:block;padding:7px 14px 9px;font-size:11.5px;font-weight:600;color:var(--navy-2);}
+  .fp-btn:hover span{color:var(--navy);text-decoration:underline;}
+  .sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin:2px 0 8px;}
+  .src-note{font-size:11px;line-height:1.4;color:#8a5a12;background:#fbf1de;border:1px solid #efd9ae;border-radius:6px;padding:5px 8px;margin-bottom:8px;}
+  #fpBox{position:fixed;inset:0;background:rgba(10,18,32,.92);z-index:200;display:none;flex-direction:column;}
+  #fpBox.show{display:flex;}
+  #fpBox .fp-bar{display:flex;align-items:center;gap:12px;padding:12px 18px;color:#fff;font-size:14px;font-weight:600;}
+  #fpBox .fp-bar .fp-title{flex:1;}
+  #fpBox .fp-bar button,#fpBox .fp-bar a{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;}
+  #fpBox .fp-bar button:hover,#fpBox .fp-bar a:hover{background:rgba(255,255,255,.28);}
+  #fpBox .fp-stage{flex:1;overflow:auto;display:flex;padding:0 12px 18px;}
+  #fpBox .fp-stage img{margin:auto;max-width:100%;max-height:100%;background:#fff;border-radius:6px;cursor:zoom-in;}
+  #fpBox.zoom .fp-stage img{max-width:none;max-height:none;width:210%;cursor:zoom-out;}
+
   /* ---------- List view ---------- */
   #listView{position:absolute;inset:0;background:var(--white);overflow-y:auto;display:none;}
   #listView.show{display:block;}
@@ -296,6 +326,10 @@
   </div>
 
   <div id="toast"></div>
+  <div id="fpBox">
+    <div class="fp-bar"><span class="fp-title" id="fpTitle"></span><button id="fpZoom">Zoom</button><a id="fpOpen" target="_blank" rel="noopener">Open image</a><button id="fpClose">Close &#10005;</button></div>
+    <div class="fp-stage" id="fpStage"><img id="fpImg" alt="Floor plan"></div>
+  </div>
 </div>
 
 <script>
@@ -548,19 +582,76 @@
     openPanel(u);
   }
 
+
+  // ---------------- unit facts / floor plans ----------------
+  var TYPES = {};
+  fetch('floorplans/types.json').then(function(r){return r.json();}).then(function(d){TYPES=d;
+    if(state.selectedId && state.units && state.units[state.selectedId]) openPanel(state.units[state.selectedId]);
+  }).catch(function(){});
+  var CLUSTER_KEY = {"SANTORINI":"santorini","VENICE":"venice","COSTA BRAVA":"costabrava","PORTOFINO":"portofino","NICE":"nice",
+    "MALTA":"malta","MARBELLA":"marbella","MONTECARLO":"montecarlo","MYKONOS":"mykonos","IBIZA":"ibiza","MOROCCO":"morocco"};
+  function fmtNum(n){return Number(n).toLocaleString('en-US',{maximumFractionDigits:0});}
+  function areaHtml(sqm,approx){
+    if(!sqm) return '<span style="color:var(--muted);font-weight:500">Not on file</span>';
+    var sqft = sqm*10.7639;
+    return (approx?'~':'')+fmtNum(sqm)+' sqm<small>'+(approx?'~':'')+fmtNum(sqft)+' sqft</small>';
+  }
+  function unitFactsHtml(u){
+    var key = CLUSTER_KEY[u.c], tinfo = key && TYPES[key] && u.t ? TYPES[key][u.t] : null;
+    if(!u.ps && !u.ba && !u.t && !u.b) return '<div class="no-owner" style="padding:0 0 12px">Unit type, size and floor plan not identified for this unit.</div>';
+    var h = '<div class="unit-facts">';
+    h += '<div class="uf-head"><div class="uf-type">'+(u.t?escapeHtml(u.t):'Unit type not identified')+'</div>';
+    if(tinfo) h += '<div class="uf-desc">'+escapeHtml(tinfo.l)+'</div>';
+    else if(u.b) h += '<div class="uf-desc">'+u.b+'-bedroom (per 2025 sheet)</div>';
+    h += '</div><div class="uf-grid">';
+    h += '<div class="uf-cell"><div class="uf-k">Bedrooms</div><div class="uf-v">'+(u.b?u.b:'—')+'</div></div>';
+    h += '<div class="uf-cell"><div class="uf-k">Plot size</div><div class="uf-v">'+areaHtml(u.ps,u.pa)+'</div></div>';
+    h += '<div class="uf-cell"><div class="uf-k">Built-up area</div><div class="uf-v">'+areaHtml(u.ba,false)+'</div></div>';
+    h += '<div class="uf-cell"><div class="uf-k">Type source</div><div class="uf-v" style="font-size:12.5px">'+
+         (u.ts==='s2'?'2025 sheet':(u.ts==='plot'?'Plot size':(u.ts?'Cluster map colour':'—')))+'</div></div>';
+    h += '</div>';
+    if(u.pa) h += '<div class="uf-note">Plot size is the typical size for this unit type; no exact figure on file.</div>';
+    else if(u.ts==='colour~') h += '<div class="uf-note">Type read from the cluster-map colour with low confidence.</div>';
+    if(tinfo && tinfo.img){
+      h += '<button class="fp-btn" data-fp="'+tinfo.img+'" data-fpt="'+escapeHtml(u.t+' · '+tinfo.l)+'">'+
+           '<img loading="lazy" src="'+tinfo.img+'" alt="Floor plan '+escapeHtml(u.t)+'"><span>View floor plan &#8599;</span></button>';
+    }
+    return h+'</div>';
+  }
+  var fpBox = document.getElementById('fpBox');
+  function openFp(src,title){
+    document.getElementById('fpImg').src = src;
+    document.getElementById('fpTitle').textContent = title||'Floor plan';
+    document.getElementById('fpOpen').href = src;
+    fpBox.classList.remove('zoom'); fpBox.classList.add('show');
+    document.getElementById('fpZoom').textContent = 'Zoom';
+  }
+  function closeFp(){ fpBox.classList.remove('show'); }
+  function toggleFpZoom(){
+    var z = fpBox.classList.toggle('zoom');
+    document.getElementById('fpZoom').textContent = z ? 'Fit' : 'Zoom';
+  }
+  document.getElementById('fpClose').onclick = closeFp;
+  document.getElementById('fpZoom').onclick = toggleFpZoom;
+  document.getElementById('fpImg').onclick = toggleFpZoom;
+  fpBox.addEventListener('click', function(e){ if(e.target===fpBox || e.target.id==='fpStage') closeFp(); });
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape') closeFp(); });
+
   function openPanel(u){
     document.getElementById('pVilla').textContent = u.v;
     document.getElementById('pCluster').textContent = u.c;
     var body = document.getElementById('pBody');
     body.innerHTML = '';
 
+    body.insertAdjacentHTML('beforeend', unitFactsHtml(u));
     if(!u.o.length){
-      body.innerHTML = '<div class="no-owner">No owner on file for this unit.</div>';
+      body.insertAdjacentHTML('beforeend', '<div class="no-owner">No owner on file for this unit.</div>');
     } else {
+      body.insertAdjacentHTML('beforeend', '<div class="sec-title">'+(u.o.length>1?'Owners':'Owner')+'</div>');
       u.o.forEach(function(o){
         var card = document.createElement('div');
         card.className = 'owner-card';
-        var html = '<div class="o-name">'+escapeHtml(o.n||'Unnamed owner')+'</div>';
+        var html = '<div class="o-name">'+escapeHtml(o.n||'Owner name not on file')+'</div>';
         var phones = [];
         if(o.m) phones.push(['Mobile', o.m]);
         if(o.s) phones.push(['Secondary', o.s]);
@@ -568,6 +659,12 @@
         if(!phones.length){
           html += '<div class="no-owner" style="padding:2px 0;">No phone on file</div>';
         } else {
+          if(o.src==='2025'){
+            html += '<div class="src-note">No phone in the 2026 sheet. This number is from the 2025 sheet'+
+                    (o.pn?', listed under <b>'+escapeHtml(o.pn)+'</b>':'')+
+                    (o.pn && o.n && o.pn.toUpperCase()!==String(o.n).toUpperCase()?' (previous owner)':'')+
+                    '. It may not reach the current owner.</div>';
+          }
           phones.forEach(function(p){
             var num = p[1];
             var intl = toIntlDigits(num);
@@ -595,6 +692,8 @@
   };
 
   document.getElementById('pBody').addEventListener('click', function(e){
+    var fb = e.target.closest && e.target.closest('.fp-btn');
+    if(fb){ openFp(fb.dataset.fp, fb.dataset.fpt); return; }
     if(e.target.dataset && e.target.dataset.copy){
       var val = e.target.dataset.copy;
       navigator.clipboard && navigator.clipboard.writeText(val);

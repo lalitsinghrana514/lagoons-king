@@ -1,0 +1,325 @@
+{
+ "costabrava": {
+  "LTH-4B-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 210.7,
+   "pt": 144,
+   "img": "floorplans/costabrava/LTH-4B-M.jpg"
+  },
+  "LTH-3B-M": {
+   "l": "3-bedroom townhouse · Middle unit",
+   "b": 3,
+   "ba": 185.8,
+   "pt": 144,
+   "img": "floorplans/costabrava/LTH-3B-M.jpg"
+  },
+  "LTH-5B-EM": {
+   "l": "5-bedroom townhouse · End-middle unit",
+   "b": 5,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/costabrava/LTH-5B-EM.jpg"
+  },
+  "LTH-5B-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 303.6,
+   "pt": null,
+   "img": "floorplans/costabrava/LTH-5B-E.jpg"
+  },
+  "LV-3B": {
+   "l": "5-bedroom villa",
+   "b": 5,
+   "ba": 418.8,
+   "pt": null,
+   "img": "floorplans/costabrava/LV-3B.jpg"
+  },
+  "LVD-1B": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/costabrava/LVD-1B.jpg"
+  }
+ },
+ "portofino": {
+  "BL-3-M": {
+   "l": "3-bedroom townhouse · Middle unit",
+   "b": 3,
+   "ba": 192.6,
+   "pt": 144,
+   "img": "floorplans/portofino/BL-3-M.jpg"
+  },
+  "BL-4-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 211.4,
+   "pt": 144,
+   "img": "floorplans/portofino/BL-4-M.jpg"
+  },
+  "BL-5-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 302.5,
+   "pt": 220,
+   "img": "floorplans/portofino/BL-5-E.jpg"
+  },
+  "BL-VD1": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/portofino/BL-VD1.jpg"
+  },
+  "BL-V75": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/portofino/BL-V75.jpg"
+  }
+ },
+ "santorini": {
+  "LTH-4A-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 204.4,
+   "pt": 144,
+   "img": "floorplans/santorini/LTH-4A-M.jpg"
+  },
+  "LTH-3A-M": {
+   "l": "3-bedroom townhouse · Middle unit",
+   "b": 3,
+   "ba": 186.9,
+   "pt": 144,
+   "img": "floorplans/santorini/LTH-3A-M.jpg"
+  },
+  "LTH-5A-M": {
+   "l": "5-bedroom townhouse · Middle unit",
+   "b": 5,
+   "ba": 264.3,
+   "pt": 144,
+   "img": "floorplans/santorini/LTH-5A-M.jpg"
+  },
+  "LTH-5A-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 292.8,
+   "pt": null,
+   "img": "floorplans/santorini/LTH-5A-E.jpg"
+  },
+  "LV3": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 368.6,
+   "pt": 432,
+   "img": "floorplans/santorini/LV3.jpg"
+  },
+  "LV4": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 406.6,
+   "pt": 432,
+   "img": "floorplans/santorini/LV4.jpg"
+  }
+ },
+ "nice": {
+  "LTH-4C-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 210.7,
+   "pt": 144,
+   "img": "floorplans/nice/LTH-4C-M.jpg"
+  },
+  "LTH-5C-M": {
+   "l": "5-bedroom townhouse · Middle unit",
+   "b": 5,
+   "ba": 269.4,
+   "pt": 144,
+   "img": "floorplans/nice/LTH-5C-M.jpg"
+  },
+  "LTH-5C-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/nice/LTH-5C-E.jpg"
+  },
+  "LV-3C": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 444.1,
+   "pt": null,
+   "img": "floorplans/nice/LV-3C.jpg"
+  }
+ },
+ "venice": {
+  "LV-1000E": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 2299.5,
+   "pt": null,
+   "img": "floorplans/venice/LV-1000E.jpg"
+  },
+  "LV-75E": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": 1634.3,
+   "pt": null,
+   "img": "floorplans/venice/LV-75E.jpg"
+  },
+  "LV-55E": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 1021.1,
+   "pt": null,
+   "img": "floorplans/venice/LV-55E.jpg"
+  },
+  "LVD-1E": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": 991.5,
+   "pt": null,
+   "img": "floorplans/venice/LVD-1E.jpg"
+  },
+  "LV-3E": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 424.8,
+   "pt": null,
+   "img": "floorplans/venice/LV-3E.jpg"
+  },
+  "LV-4E": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 377.8,
+   "pt": null,
+   "img": "floorplans/venice/LV-4E.jpg"
+  }
+ },
+ "malta": {
+  "LTH-4D-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 211.2,
+   "pt": 144,
+   "img": "floorplans/malta/LTH-4D-M.jpg"
+  },
+  "LTH-5D-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 313.7,
+   "pt": null,
+   "img": "floorplans/malta/LTH-5D-E.jpg"
+  },
+  "LVD-1D": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/malta/LVD-1D.jpg"
+  }
+ },
+ "marbella": {
+  "LTH-4F-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 211.8,
+   "pt": 144,
+   "img": "floorplans/marbella/LTH-4F-M.jpg"
+  },
+  "LTH-5F-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 322.4,
+   "pt": 220,
+   "img": "floorplans/marbella/LTH-5F-E.jpg"
+  }
+ },
+ "montecarlo": {
+  "LTH-4G-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 211.3,
+   "pt": 144,
+   "img": "floorplans/montecarlo/LTH-4G-M.jpg"
+  },
+  "LTH-5G-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/montecarlo/LTH-5G-E.jpg"
+  }
+ },
+ "mykonos": {
+  "LTH-4J-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 211.2,
+   "pt": 144,
+   "img": "floorplans/mykonos/LTH-4J-M.jpg"
+  },
+  "LTH-5J-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": null,
+   "pt": null,
+   "img": "floorplans/mykonos/LTH-5J-E.jpg"
+  }
+ },
+ "ibiza": {
+  "LTH-4H-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 211.2,
+   "pt": 144,
+   "img": "floorplans/ibiza/LTH-4H-M.jpg"
+  },
+  "LTH-5H-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 313.7,
+   "pt": null,
+   "img": "floorplans/ibiza/LTH-5H-E.jpg"
+  }
+ },
+ "morocco": {
+  "LTH-4K-M": {
+   "l": "4-bedroom townhouse · Middle unit",
+   "b": 4,
+   "ba": 207.3,
+   "pt": 144,
+   "img": "floorplans/morocco/LTH-4K-M.jpg"
+  },
+  "LTH-5K-E": {
+   "l": "5-bedroom townhouse · End unit",
+   "b": 5,
+   "ba": 295.8,
+   "pt": null,
+   "img": "floorplans/morocco/LTH-5K-E.jpg"
+  },
+  "LV-55K": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 1082.5,
+   "pt": null,
+   "img": "floorplans/morocco/LV-55K.jpg"
+  },
+  "LV-75K": {
+   "l": "7-bedroom villa",
+   "b": 7,
+   "ba": 1611.6,
+   "pt": null,
+   "img": "floorplans/morocco/LV-75K.jpg"
+  },
+  "LV-1000K": {
+   "l": "6-bedroom villa",
+   "b": 6,
+   "ba": 2323.7,
+   "pt": null,
+   "img": "floorplans/morocco/LV-1000K.jpg"
+  }
+ }
+}

@@ -609,6 +609,58 @@ is the base pass) and diffed against `morocco_units.json`:
 The same "OCR every label, diff against the data" audit is the fastest way
 to find missing/misplaced units on any other cluster.
 
+## 10f. Master-plan snap, 2025 phone fill, unit types / sizes / floor plans (2026-09-24)
+
+**Position snap.** `Damac Lagoon .pdf` (master plan) has a text layer with an exact
+plot-label centre for 9,024 villas. Each cluster image has a fitted 3x2 affine
+(percent -> master pt); any unit more than 3 pt (~ a plot width) from its master
+label was moved onto it (634 units). Tool: `tools/snap_to_master.py`.
+
+**Phones from the 2025 sheet.** Only where the 2026 sheet has no phone. Join key is
+`DL-<villa>`; sources are Special 2025 S1/S2 and `Damac Lagoons. 2025.xlsx`. The
+2025 person is often the *previous* owner, so the owner record gets
+`src:"2025"`, `pn` (name on the 2025 record) and `py`; the panel shows an amber
+note. Audit: not in repo (scratch), 217 units in the root list.
+
+**Unit fields** (added to every unit in `clusters/*_units.json` and `units.json`):
+`t` type code (e.g. `LTH-4B-M`), `b` bedrooms, `ps` plot sqm, `pa:1` if `ps` is a
+typical fill (only for types whose plot size is uniform), `ba` built-up sqm,
+`ts` type source (`s2` = 2025 sheet bedrooms, `plot` = unique plot-size class,
+`colour` = cluster-map legend colour, `colour~` = wide-window low-confidence).
+`floorplans/types.json` = per-cluster type table (label, beds, BUA, image).
+
+**How types were assigned** (`tools/unit_types.py`, `tools/apply_unit_types.py`):
+1. Candidates by plot-size class (M ~144 sqm, E ~220, LV 380-520, ...).
+2. 2025-sheet bedrooms filter candidates when known.
+3. If more than one candidate remains, per-pixel nearest legend colour (Lab,
+   +-12 px window around the marker) picks between them; palettes were read from
+   the master-map legend and from the cluster images.
+Blind check (ignore 2025 bedrooms, compare to them): 45/45 Costa Brava, 54/54
+Portofino, 42/42 Santorini, 70/71 Nice, 20/22 Venice, 69/72 Malta, 137/140 Morocco,
+all others 100%.
+
+**BUA (sqm, `ba`)**: modal 2025-sheet "Built Up" per type when >= 2 units agree;
+Venice from the sellable-area printed on its floor-plan PDF (sqft / 10.7639).
+Deliberately NOT shown: Nice LTH-5C-E, Monte Carlo LTH-5G-E, Mykonos LTH-5J-E (the
+2025 value there equals the plot size, so it is not a BUA), and types with no data
+(LVD-1B, LTH-5B-EM, BL-VD1, BL-V75, LVD-1D).
+
+**Not typed** (no plot size, no legend colour at the marker): ~155 units, mostly
+Mykonos (71), Costa Brava (37), Ibiza (26), Venice (16). The Mykonos ones sit in
+blocks the source plan draws as plain green (no coloured buildings).
+
+**Morocco note**: the legend has LTH-5K-M but the plot-size classes only support
+LTH-4K-M (144) and LTH-5K-E (220); no unit is assigned LTH-5K-M.
+
+**Floor plans**: `floorplans/<cluster>/<type>.jpg`, cropped from the per-cluster
+brochure PDFs by `tools/render_floorplans.py` (page + crop box per type).
+
+**UI**: panel shows type, bedrooms, plot and BUA in sqm with sqft, a floor-plan
+thumbnail that opens a lightbox (Zoom/Fit, Esc to close), and the 2025-phone note.
+
+**Deploy warning**: the live site is deployed outside GitHub; pull `main` before
+the next deploy or these changes are overwritten.
+
 ## 10. Sensible next steps, if asked to improve this
 
 - Tighten up the `M`-prefix (Nice) position confidence gap (§5).
